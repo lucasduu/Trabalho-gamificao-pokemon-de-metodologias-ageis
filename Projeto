@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Agile: Gold Edition</title>
+    <style>
+        body {
+            background-color: #222;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        #game-boy {
+            background-color: #c0c0c0;
+            border: 4px solid #404040;
+            border-radius: 10px;
+            padding: 20px;
+            width: 360px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        }
+
+        #screen {
+            background-color: #8b956d;
+            border: 4px solid #0f380f;
+            border-radius: 5px;
+            padding: 10px;
+            color: #0f380f;
+            font-weight: bold;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 2px solid #0f380f;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+
+        .battle-area {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .character-box {
+            border: 2px solid #0f380f;
+            padding: 5px;
+            background-color: #9bbc0f;
+        }
+
+        .enemy {
+            align-self: flex-end;
+            text-align: right;
+            width: 70%;
+        }
+
+        .player {
+            align-self: flex-start;
+            width: 70%;
+        }
+
+        .hp-bar {
+            background-color: #8b956d;
+            border: 1px solid #0f380f;
+            height: 10px;
+            margin-top: 3px;
+        }
+
+        .hp-fill {
+            background-color: #0f380f;
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s;
+        }
+
+        #log {
+            height: 50px;
+            border: 2px solid #0f380f;
+            background-color: #9bbc0f;
+            padding: 5px;
+            font-size: 12px;
+            margin-bottom: 10px;
+            overflow-y: auto;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+        }
+
+        button {
+            background-color: #0f380f;
+            color: #9bbc0f;
+            border: none;
+            padding: 8px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        button:hover {
+            background-color: #306230;
+        }
+
+        button:disabled {
+            background-color: #8b956d;
+            color: #0f380f;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-boy">
+    <div id="screen">
+        <div class="header">
+            <span>Santuário de Entregas</span>
+            <span>Sprint #1</span>
+        </div>
+
+        <div class="battle-area">
+            <!-- Inimigo -->
+            <div class="character-box enemy">
+                <div>👾 SCOPE CREEP Nv.18</div>
+                <div class="hp-bar"><div id="enemy-hp" class="hp-fill"></div></div>
+                <div id="enemy-hp-text" style="font-size: 10px;">HP: 40/40</div>
+            </div>
+
+            <!-- Jogador -->
+            <div class="character-box player">
+                <div>⚡ DAILY-MON Nv.15</div>
+                <div class="hp-bar"><div id="player-hp" class="hp-fill"></div></div>
+                <div id="player-hp-text" style="font-size: 10px;">HP: 52/52</div>
+            </div>
+        </div>
+
+        <!-- Caixas de Texto / Diálogo -->
+        <div id="log">Um Scope Creep selvagem apareceu! O que Daily-mon fará?</div>
+
+        <!-- Controles de Ação -->
+        <div class="controls" id="action-buttons">
+            <button onclick="playTurn('timebox')">Timebox Burst</button>
+            <button onclick="playTurn('wip')">WIP Block</button>
+            <button onclick="playTurn('heal')">Refactoring Heal</button>
+            <button onclick="playTurn('capture')">Sprint Backlog</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let player = { hp: 52, maxHp: 52, shield: false };
+    let enemy = { hp: 40, maxHp: 40, name: "Scope Creep" };
+    let gameOver = false;
+
+    function updateUI() {
+        const playerHpPct = Math.max(0, (player.hp / player.maxHp) * 100);
+        const enemyHpPct = Math.max(0, (enemy.hp / enemy.maxHp) * 100);
+
+        document.getElementById('player-hp').style.width = playerHpPct + '%';
+        document.getElementById('enemy-hp').style.width = enemyHpPct + '%';
+
+        document.getElementById('player-hp-text').innerText = `HP: ${Math.max(0, player.hp)}/${player.maxHp}`;
+        document.getElementById('enemy-hp-text').innerText = `HP: ${Math.max(0, enemy.hp)}/${enemy.maxHp}`;
+    }
+
+    function log(msg) {
+        document.getElementById('log').innerText = msg;
+    }
+
+    function disableButtons() {
+        const btns = document.querySelectorAll('.controls button');
+        btns.forEach(b => b.disabled = true);
+    }
+
+    function playTurn(action) {
+        if (gameOver) return;
+
+        let logText = "";
+
+        // Ação do jogador
+        if (action === 'timebox') {
+            const dmg = 12;
+            enemy.hp -= dmg;
+            logText = `Daily-mon usou Timebox Burst! Causou ${dmg} de dano. `;
+        } else if (action === 'wip') {
+            player.shield = true;
+            logText = "Daily-mon usou WIP Block e reduziu o fluxo de tarefas! ";
+        } else if (action === 'heal') {
+            const heal = 15;
+            player.hp = Math.min(player.maxHp, player.hp + heal);
+            logText = `Daily-mon usou Refactoring Heal e recuperou ${heal} de HP! `;
+        } else if (action === 'capture') {
+            const catchRate = (1 - (enemy.hp / enemy.maxHp));
+            if (Math.random() < catchRate + 0.2) {
+                log("Sucesso! Você integrou o Scope Creep ao Backlog com sucesso!");
+                disableButtons();
+                gameOver = true;
+                return;
+            } else {
+                logText = "O Scope Creep recusou o planejamento e escapou do Backlog! ";
+            }
+        }
+
+        updateUI();
+
+        // Checar vitória
+        if (enemy.hp <= 0) {
+            log(logText + "👾 Scope Creep foi derrotado! A Sprint foi entregue a tempo!");
+            disableButtons();
+            gameOver = true;
+            return;
+        }
+
+        // Turno do Inimigo
+        setTimeout(() => {
+            let enemyDmg = Math.floor(Math.random() * 8) + 6;
+            if (player.shield) {
+                enemyDmg = Math.floor(enemyDmg / 2);
+                player.shield = false;
+                logText += `Scope Creep atacou com 'Requisito Extra', mas o escudo reduziu para ${enemyDmg} de dano!`;
+            } else {
+                logText += `Scope Creep atacou com 'Requisito Extra' causando ${enemyDmg} de dano!`;
+            }
+
+            player.hp -= enemyDmg;
+            updateUI();
+
+            if (player.hp <= 0) {
+                log("Daily-mon entrou em Burnout! A Sprint falhou...");
+                disableButtons();
+                gameOver = true;
+            } else {
+                log(logText);
+            }
+        }, 1000);
+    }
+</script>
+
+</body>
+</html>
