@@ -1,5 +1,4 @@
-
-integrantes do grupo:
+grupo:
 
 lucas Duarte 202602403269
 João Paulo Gouveia Rodrigues 202608282511
